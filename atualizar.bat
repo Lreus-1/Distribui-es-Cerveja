@@ -13,6 +13,7 @@ rem 1) Se houver um index.html novo em Downloads, traz para esta pasta
 set "BAIXADO=%USERPROFILE%\Downloads\index.html"
 if exist "%BAIXADO%" (
     echo Encontrei um index.html em Downloads. Movendo para esta pasta...
+    if exist "%~dp0Index.html" del /Q "%~dp0Index.html"
     move /Y "%BAIXADO%" "%~dp0index.html" >nul
     echo OK.
 ) else (
@@ -34,8 +35,18 @@ set "HORA=%time:~0,5%"
 git commit -m "Atualiza dados %HOJE% %HORA%"
 echo.
 
-rem 4) Envia para o GitHub (o Vercel republica sozinho)
-git push
+rem 4) Traz o que houver de novo no GitHub (a versao local prevalece em conflito)
+git pull --rebase -X theirs origin main
+if errorlevel 1 (
+    echo.
+    echo *** ERRO ao sincronizar com o GitHub. Rode "git status" nesta pasta e me mande o resultado. ***
+    git rebase --abort >nul 2>&1
+    goto fim
+)
+echo.
+
+rem 5) Envia para o GitHub (o Vercel republica sozinho)
+git push origin main
 if errorlevel 1 (
     echo.
     echo *** ERRO no envio. Confira a internet ou o login do GitHub. ***
